@@ -1,0 +1,12 @@
+{
+  "name": "erpapp",
+  "version": "0.0.1",
+  "description": "An Apexion cloud based ERP solutions",
+  "author": "Shabeeb Ali O",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^2.4.0",
+    "@capacitor/cli": "^2.0.0",
+    "@capacitor/core": "^2.0.0"
+  }
+}

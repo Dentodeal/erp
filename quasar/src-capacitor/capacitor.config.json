@@ -1,0 +1,7 @@
+{
+  "appId": "com.erpapp.apexion",
+  "appName": "Apexion ERP App",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "www"
+}

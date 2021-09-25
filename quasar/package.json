@@ -1,0 +1,58 @@
+{
+  "name": "erpapp",
+  "version": "0.0.1",
+  "description": "An Apexion cloud based ERP solutions",
+  "productName": "Apexion ERP App",
+  "author": "Shabeeb Ali O",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^2.4.6",
+    "@quasar/extras": "^1.9.15",
+    "@quasar/icongenie": "^2.3.3",
+    "axios": "^0.18.1",
+    "chart.js": "^2.9.4",
+    "core-js": "^3.8.3",
+    "eslint-loader": "^4.0.2",
+    "firebase": "^8.5.0",
+    "laravel-echo": "^1.10.0",
+    "lodash": "^4.17.20",
+    "pusher-js": "^7.0.3",
+    "quasar": "^1.15.1",
+    "vue-chartjs": "^3.5.1",
+    "vuedraggable": "^2.24.3"
+  },
+  "devDependencies": {
+    "@quasar/app": "^2.1.14",
+    "@quasar/quasar-app-extension-qcalendar": "^3.3.4",
+    "babel-eslint": "^10.1.0",
+    "devtron": "^1.4.0",
+    "electron": "^9.4.2",
+    "electron-debug": "^3.2.0",
+    "electron-devtools-installer": "^3.1.1",
+    "electron-packager": "^14.2.1",
+    "eslint": "^7.18.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-vue": "^7.5.0",
+    "standard": "^16.0.3"
+  },
+  "browserslist": [
+    "last 10 Chrome versions",
+    "last 10 Firefox versions",
+    "last 4 Edge versions",
+    "last 7 Safari versions",
+    "last 8 Android versions",
+    "last 8 ChromeAndroid versions",
+    "last 8 FirefoxAndroid versions",
+    "last 10 iOS versions",
+    "last 5 Opera versions"
+  ],
+  "engines": {
+    "node": ">= 10.18.1",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
+}
