@@ -10,8 +10,8 @@ let axiosInstance = axios.create({
 
 if (process.env.PROD) {
   axiosInstance = axios.create({
-    baseURL: 'https://apexion.ml/api',
-    authURL: 'https://apexion.ml',
+    baseURL: 'https://app.apexion.ml/api',
+    authURL: 'https://app.apexion.ml',
     withCredentials: true
   })
 }
