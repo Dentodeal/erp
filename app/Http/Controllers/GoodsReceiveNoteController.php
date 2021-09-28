@@ -26,10 +26,12 @@ class GoodsReceiveNoteController extends Controller
             'suppliers.name AS supplier_name',
             'goods_receive_notes.status AS status',
             'goods_receive_notes.delivery_date AS delivery_date',
-            'users.name as created_by_name'
+            'users.name as created_by_name',
+            'purchases.bill_number as purchase_serial'
         ];
         $model = GoodsReceiveNote::select($select_arr)->join('suppliers','goods_receive_notes.supplier_id','=','suppliers.id')
-            ->join('users','goods_receive_notes.created_by_id', 'users.id');
+            ->join('users','goods_receive_notes.created_by_id', 'users.id')
+            ->leftJoin('purchases','purchases.grn_id','goods_receive_notes.id');
         if(count($filters) > 0){
             foreach($filters as $key => $val){
                 if($key != 'status'){
@@ -91,6 +93,14 @@ class GoodsReceiveNoteController extends Controller
                 'name' => 'supplier_name',
                 'label' => 'Supplier',
                 'field' => 'supplier_name',
+                'required' => true,
+                'sortable' => true,
+                'align' => 'left'
+            ],
+            [
+                'name' => 'purchase_serial',
+                'label' => 'Purchase',
+                'field' => 'purchase_serial',
                 'required' => true,
                 'sortable' => true,
                 'align' => 'left'
