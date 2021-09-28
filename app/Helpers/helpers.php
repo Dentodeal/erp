@@ -3,22 +3,25 @@ use Illuminate\Http\Request;
 
 function getVisibleColumns(Request $request, $PREFERENCE_SLUG, $default) {
     $visibleColumns = $default;
+    //Check whether "visible" parameter is present in incoming request. This happens only if visible columns section in frontend is changed.
+    // If "visible" is present then update the database with new value and return this new value.
     if ($request->visible && count(json_decode($request->visible,TRUE)) > 0 && $request->visible != 'undefined') {
         $visibleColumns = json_decode($request->visible,TRUE);
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => $request->visible
             ]
         );
     }
+    // If "visible" parameter is not present the retrieve visible column from database and return
     else {
         $pageIndexVisibleColumnModel = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         $visibleColumnsModel = \App\UserPreferenceValue::where([
-                ['user_id','=',\Auth::user()->id],
+                ['user_id','=',request()->user()->id],
                 ['preference_id','=',$pageIndexVisibleColumnModel->id]
             ])->first();
         if ($visibleColumnsModel && count(json_decode($visibleColumnsModel->value)) > 0 && $visibleColumnsModel->value != 'undefined') {
@@ -35,7 +38,7 @@ function getFilters(Request $request, $PREFERENCE_SLUG) {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => $request->filter
@@ -45,7 +48,7 @@ function getFilters(Request $request, $PREFERENCE_SLUG) {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => []
@@ -56,7 +59,7 @@ function getFilters(Request $request, $PREFERENCE_SLUG) {
     else {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         $filtersModel = \App\UserPreferenceValue::where([
-                ['user_id','=',\Auth::user()->id],
+                ['user_id','=',request()->user()->id],
                 ['preference_id','=',$preference->id]
             ])->first();
         // dd($preference->id);
@@ -74,7 +77,7 @@ function getSearch(Request $request, $PREFERENCE_SLUG) {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => $request->search
@@ -84,7 +87,7 @@ function getSearch(Request $request, $PREFERENCE_SLUG) {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => ''
@@ -94,7 +97,7 @@ function getSearch(Request $request, $PREFERENCE_SLUG) {
     }else {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         $searchModel = \App\UserPreferenceValue::where([
-                ['user_id','=',\Auth::user()->id],
+                ['user_id','=',request()->user()->id],
                 ['preference_id','=',$preference->id]
             ])->first();
         // dd($preference->id);
@@ -126,7 +129,7 @@ function getPagination(Request $request, $PREFERENCE_SLUG) {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         \App\UserPreferenceValue::updateOrCreate(
             [
-            'user_id' => \Auth::user()->id, 'preference_id' => $preference->id
+            'user_id' => request()->user()->id, 'preference_id' => $preference->id
             ],
             [
             'value' => json_encode($pagination)
@@ -136,7 +139,7 @@ function getPagination(Request $request, $PREFERENCE_SLUG) {
     } else {
         $preference = \App\Preference::where('slug',$PREFERENCE_SLUG)->first();
         $paginationModel = \App\UserPreferenceValue::where([
-                ['user_id','=',\Auth::user()->id],
+                ['user_id','=',request()->user()->id],
                 ['preference_id','=',$preference->id]
             ])->first();
         // dd($preference->id);
@@ -147,6 +150,7 @@ function getPagination(Request $request, $PREFERENCE_SLUG) {
     return $pagination;
 }
 
+// function to generate unique serial number based on given parameters
 function generateSerial($table, $prefix, $column = 'serial_no') {
     $today_date = \Carbon\Carbon::now()->format('ymd');
     $nextDay = \Carbon\Carbon::today('Asia/Kolkata')->addHours(24)->toDateTimeString();

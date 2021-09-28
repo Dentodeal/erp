@@ -1210,9 +1210,22 @@ export default {
           persistent: true
         })
         .onOk(() => {
-          const total = parseFloat(this.model.items[index].total)
-          this.model.subtotal = parseFloat(this.model.subtotal) - total
-          this.model.items.splice(index, 1)
+          if (this.model.items[index].id) {
+            this.$q.loading.show()
+            this.$axios.get('quotations/delete_item/' + this.model.items[index].id).then((res) => {
+              if (res.data.message === 'success') {
+                const total = parseFloat(this.model.items[index].total)
+                this.model.subtotal = parseFloat(this.model.subtotal) - total
+                this.model.items.splice(index, 1)
+              }
+            }).finally(() => {
+              this.$q.loading.hide()
+            })
+          } else {
+            const total = parseFloat(this.model.items[index].total)
+            this.model.subtotal = parseFloat(this.model.subtotal) - total
+            this.model.items.splice(index, 1)
+          }
         })
         .onCancel(() => {})
     },

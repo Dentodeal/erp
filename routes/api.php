@@ -300,6 +300,7 @@ Route::middleware(['auth:sanctum','checkuserisactive'])->group(function(){
     Route::post('quotations/export/{id}','QuotationController@export');
     Route::get('quotations/columns','QuotationController@getColumns');
     Route::get('quotations/filterables','QuotationController@getFilterables');
+    Route::get('quotations/delete_item/{id}','QuotationController@deleteItem');
     Route::apiResource('quotations','QuotationController');
 
     Route::apiResource('quotation_templates','QuotationTemplateController');

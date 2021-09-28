@@ -365,26 +365,17 @@ class SaleOrder extends Model
         $this->save();
         $serial_no = NULL;
         if(!$parent_id) {
-            $today_date = \Carbon\Carbon::now()->format('ymd');
-            $serial_no = 'TR'.$today_date.'0000';
-            $sn_val_arr['serial_no'] = $serial_no;
-            $count = 0;
-            while(Validator::make($sn_val_arr,['serial_no'=>'unique:transactions,serial_no'])->fails()){
-                $serial_no = substr($serial_no, 0, -4);
-                $count = $count + 1;
-                $serial_no = $serial_no.str_pad($count, 4,0,STR_PAD_LEFT);
-                $sn_val_arr['serial_no'] = $serial_no;
-            }
+            $serial_no = generateSerial('transactions','TR');
         }
         $transaction = new \App\Transaction([
-            'serial_no' => $serial_no ? $serial_no : NULL,
+            'serial_no' => $serial_no,
             'customer_id' => $this->customer->id,
             'type' => 'settlement',
             'payment_via' => $payment_via,
             'amount' => $amount,
             'reference_id' => $reference_id,
             'remarks' => $remarks,
-            'created_by_id' => \Auth::user()->id,
+            'created_by_id' => \Auth::user() ? \Auth::user()->id : 1,
             'parent_id' => $parent_id
         ]);
         $this->transactions()->save($transaction);

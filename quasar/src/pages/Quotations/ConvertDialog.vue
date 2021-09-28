@@ -36,6 +36,7 @@
             selection="multiple"
             :selected.sync="selectedForConversion"
             row-key="index"
+            :rows-per-page-options="[0]"
           >
             <template v-slot:body-selection="scope">
               <q-checkbox v-model="scope.selected" :disable="scope.row.converted_qty === scope.row.qty || !scope.row.product_id"/>

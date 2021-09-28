@@ -375,7 +375,8 @@ class QuotationController extends Controller
         $arr['created_by_id'] = $request->created_by['id'];
         //dd($arr);
         $model->update($arr);
-        $model->items()->delete();
+        //$model->items()->delete();
+        $count = 1;
         foreach($request->items as $item){
             $arr = Arr::only($item,[
                 'product_id',
@@ -390,8 +391,15 @@ class QuotationController extends Controller
                 'total',
             ]);
             $arr['gst'] = $item['gst'] ? $item['gst'] : ($item['product_id'] > 0 ? \App\Product::find($item['product_id'])->gst : 0);
-            $quotationItemsModel = new \App\QuotationItem($arr);
-            $model->items()->save($quotationItemsModel);
+            $arr['order'] = $count;
+            if (array_key_exists('id',$item)) {
+                $quotationItemModel = \App\QuotationItem::find($item['id']);
+                $quotationItemModel->update($arr);
+            } else {
+                $quotationItemsModel = new \App\QuotationItem($arr);
+                $model->items()->save($quotationItemsModel);
+            }
+            $count++;
         }
         return response()->json(['message'=>'success']);
     }
@@ -406,6 +414,13 @@ class QuotationController extends Controller
     {
         $this->authorize('delete',$quotation);
         $quotation->delete();
+        return response()->json(['message'=>'success']);
+    }
+
+    public function deleteItem($id)
+    {
+        $model = \App\QuotationItem::find($id);
+        $model->delete();
         return response()->json(['message'=>'success']);
     }
 
