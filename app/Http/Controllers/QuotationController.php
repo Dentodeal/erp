@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\DomPDF\Facade as PDF;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class QuotationController extends Controller
@@ -43,6 +44,9 @@ class QuotationController extends Controller
             if($value == 'status'){
                 $select_arr[$key] = 'quotations.status AS status';
             }
+            if($value == 'type'){
+                $select_arr[$key] = 'quotations.type AS type';
+            }
             if($value == 'created_at'){
                 $select_arr[$key] = 'quotations.created_at AS created_at';
             }
@@ -66,7 +70,7 @@ class QuotationController extends Controller
                             ->join(DB::raw('users representative'),'quotations.representative_id','=','representative.id');
         if(count($filters) > 0){
             foreach($filters as $key => $val){
-                if($key != 'status' && $key != 'created_by_name'){
+                if($key != 'status' && $key != 'created_by_name' && $key != 'type'){
                     $chunks = explode(" ",$val);
                     $model->where(function ($query) use ($chunks,$key){
                         foreach ($chunks as $it) {
@@ -204,6 +208,14 @@ class QuotationController extends Controller
                 'slug' => 'status',
                 'searcheable' => false,
                 'options' => ['Draft','Complete'],
+                'value' => []
+            ],
+            [
+                'field_type' => 'Selection',
+                'name' => 'Type',
+                'slug' => 'type',
+                'searcheable' => false,
+                'options' => ['Standard','Export'],
                 'value' => []
             ],
             [
@@ -730,4 +742,80 @@ class QuotationController extends Controller
             ->log('created');
         return response()->json(['message'=>'success','id'=>$saleOrder->id]);
     }
+
+    public function addPayment(Request $request,$id) {
+        $model = Quotation::find($id);
+        $payments = $model->payments;
+        $payments[] = [
+            'id' => time(),
+            'payment_via' => $request->payment_via,
+            'currency' => $request->currency,
+            'transaction_id' => $request->transaction_id,
+            'amount' => $request->amount
+        ];
+        $model->payments = $payments;
+        $model->save();
+        return response()->json([
+            'message' => 'success',
+            'payments' => $payments 
+        ]);
+    }
+
+    public function deletePayment ($id, $payment_id) {
+        $model = Quotation::find($id);
+        $payments = $model->payments;
+        $deleteIndex = NULL;
+        foreach($payments as $index => $item) {
+            if($item['id'] == $payment_id) {
+                $deleteIndex = $index;
+            }
+        }
+        if($deleteIndex !== NULL) {
+            unset($payments[$deleteIndex]);
+        }
+        $model->payments = $payments;
+        $model->save();
+        return response()->json([
+            'message' => 'success',
+            'payments' => $payments 
+        ]);
+    } 
+
+    public function addDocuments(Request $request, $id) {
+        $model = Quotation::find($id);
+        $path = $request->file('file')->store('docs','public');
+        $documents = $model->documents;
+        $documents[] = [
+            'id' => time(),
+            'name' => $request->name,
+            'link' => $path
+        ];
+        $model->documents = $documents;
+        $model->save();
+        return response()->json([
+            'message' => 'success',
+            'documents' => $documents
+        ]);
+    }
+
+    public function deleteDocument ($id, $doc_id) {
+        $model = Quotation::find($id);
+        $documents = $model->documents;
+        $deleteIndex = NULL;
+        foreach($documents as $index => $item) {
+            if($item['id'] == $doc_id) {
+                $deleteIndex = $index;
+            }
+        }
+        if($deleteIndex !== NULL) {
+            Storage::disk('public')->delete($documents[$deleteIndex]['link']);
+            unset($documents[$deleteIndex]);
+        }
+        $model->documents = $documents;
+        $model->save();
+        return response()->json([
+            'message' => 'success',
+            'documents' => $documents 
+        ]);
+    } 
 }

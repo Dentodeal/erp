@@ -45,6 +45,14 @@ export default {
   computed: {
     toolbarButtons () {
       const arr = []
+      arr.push({
+        label: 'Create Price Adjustment',
+        id: 'create',
+        link: '/purchases/create',
+        type: 'a',
+        color: 'teal',
+        icon: 'add'
+      })
       return arr
     }
   },

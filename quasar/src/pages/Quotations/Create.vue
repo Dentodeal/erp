@@ -1133,10 +1133,30 @@ export default {
               label: 'Continue'
             }
           }).onOk(() => {
-            this.addRow()
+            if (this.cost > 0 && this.rate < this.cost) {
+              this.$q.dialog({
+                title: 'Warning',
+                message: 'The rate you entered is less than cost [' + this.cost + ']. Continue?',
+                cancel: true
+              }).onOk(() => {
+                this.addRow()
+              })
+            } else {
+              this.addRow()
+            }
           })
         } else {
-          this.addRow()
+          if (this.cost > 0 && this.rate < this.cost) {
+            this.$q.dialog({
+              title: 'Warning',
+              message: 'The rate you entered is less than cost [' + this.cost + ']. Continue?',
+              cancel: true
+            }).onOk(() => {
+              this.addRow()
+            })
+          } else {
+            this.addRow()
+          }
         }
       })
     },
@@ -1194,6 +1214,7 @@ export default {
       this.row_tax_amount = null
       this.row_total = null
       this.stock = null
+      this.cost = null
       this.$nextTick(() => {
         this.$refs.product.focus()
       })

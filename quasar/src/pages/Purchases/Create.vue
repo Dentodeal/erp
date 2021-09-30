@@ -484,8 +484,12 @@ export default {
       grn_id: null,
       grn_serial_no: null,
       bill_number: null,
-      supplier: null,
-      warehouse: null,
+      supplier: {
+        name: null
+      },
+      warehouse: {
+        name: null
+      },
       items: [],
       round: 0,
       discount_subtotal: 0,
@@ -684,7 +688,27 @@ export default {
           this.$q.loading.hide()
         })
       } else {
-        this.$store.commit('setPageTitle', 'Create Purchase')
+        if (!this.$route.query.grn_id) {
+          this.$store.commit('setPageTitle', 'Create Purchase')
+          this.bill_number = Date.now().toString()
+          this.supplier = {
+            id: 181,
+            name: 'Apexion Dental Products & Services'
+          }
+          const today = new Date()
+          const year = today.getFullYear().toString()
+          let month = (today.getMonth() + 1).toString()
+          let day = today.getDate().toString()
+          if (month.length < 2) { month = '0' + month }
+          if (day.length < 2) { day = '0' + day }
+          const todayFormatted = year + '-' + month + '-' + day
+          this.bill_date = todayFormatted
+          this.delivery_date = todayFormatted
+          this.warehouse = {
+            id: 1,
+            name: 'Default'
+          }
+        }
       }
       if (this.$route.query.grn_id) {
         this.$q.loading.show()
@@ -718,10 +742,18 @@ export default {
         })
         return
       }
-      update(() => {
-        const needle = val.toLowerCase()
-        this.productOptions = this.products.filter((v) => v.name.toLowerCase().indexOf(needle) > -1)
-      })
+      const needle = val.toLowerCase()
+      if (this.$route.query.grn_id || this.$route.params.id) {
+        update(() => {
+          this.productOptions = this.products.filter((v) => v.name.toLowerCase().indexOf(needle) > -1)
+        })
+      } else {
+        this.$axios.get('products/search?keyword=' + encodeURIComponent(val)).then((res) => {
+          update(() => {
+            this.productOptions = res.data
+          })
+        })
+      }
     },
     addRow () {
       if (

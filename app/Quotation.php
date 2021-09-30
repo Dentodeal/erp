@@ -11,7 +11,9 @@ class Quotation extends Model
 
     protected $casts = [
         'rate_includes_gst' => 'boolean',
-        'bank' => 'array'
+        'bank' => 'array',
+        'payments' => 'array',
+        'documents' => 'array'
     ];
 
     public function items()

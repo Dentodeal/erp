@@ -293,21 +293,23 @@
               <q-markup-table>
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Payment Via</th>
-                    <th>Transaction ID</th>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Payment Via</th>
+                    <th class="text-left">Transaction ID</th>
                     <th class="text-right">Amount</th>
                     <th class="text-right">Created At</th>
+                    <th class="text-right"></th>
                   </tr>
                 </thead>
                 <tbody>
                   <template v-if="model.payments && model.payments.length > 0">
                     <tr v-for="(item,ind) in model.payments" :key="ind">
-                      <td>{{ind + 1}}</td>
-                      <td>{{item.payment_via}}</td>
-                      <td>{{item.transaction_id}}</td>
+                      <td class="text-left">{{ind + 1}}</td>
+                      <td class="text-left">{{item.payment_via}}</td>
+                      <td class="text-left">{{item.transaction_id}}</td>
                       <td class="text-right">{{item.amount}}</td>
-                      <td class="text-right">{{getLocaleString(item.created_at)}}</td>
+                      <td class="text-right">{{getLocaleString(new Date(item.id * 1000))}}</td>
+                      <td class="text-right"><q-btn flat round icon="delete" @click="deletePayment(ind)"/></td>
                     </tr>
                   </template>
                   <tr v-else>
@@ -323,8 +325,50 @@
           </q-tab-panel>
 
           <q-tab-panel name="documents">
-            <div class="text-h6">Movies</div>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            <q-card>
+              <q-markup-table>
+                <thead>
+                  <tr>
+                    <th class="text-left">#</th>
+                    <th class="text-left">Document</th>
+                    <th class="text-right"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template v-if="model.documents && model.documents.length > 0">
+                    <tr v-for="(item,ind) in model.documents" :key="ind">
+                      <td class="text-left">{{ind + 1}}</td>
+                      <td class="text-left">
+                        <a :href="$store.getters.baseURL + '/storage/' + item.link" target="_blank">{{item.name}}</a>
+                      </td>
+                      <td class="text-right"><q-btn flat round icon="delete" @click="deleteDocument(ind)"/></td>
+                    </tr>
+                  </template>
+                  <tr v-else>
+                    <td colspan="100%" class="text-center text-caption">No Data Available</td>
+                  </tr>
+                </tbody>
+              </q-markup-table>
+              <q-card-section>
+                <q-form ref="docForm">
+                  <div class="row q-col-gutter-md">
+                    <div class="col-6">
+                      <q-input filled dense :rules="[v => !!v || 'Required']" label="Document Name" v-model="doc_name"/>
+                    </div>
+                    <div class="col-4">
+                      <q-file outlined v-model="doc_file" filled dense ref="docfile" :rules="[v => !!v || 'Required']">
+                        <template v-slot:prepend>
+                          <q-icon name="attach_file" />
+                        </template>
+                      </q-file>
+                    </div>
+                    <div class="col-2">
+                      <q-btn color="primary" label="Upload" @click="uploadDoc"/>
+                    </div>
+                  </div>
+                </q-form>
+              </q-card-section>
+            </q-card>
           </q-tab-panel>
         </q-tab-panels>
       </q-card>
@@ -404,7 +448,7 @@
           </q-form>
         </q-card-section>
         <q-card-actions>
-          <q-btn label="Submit" color="primary" />
+          <q-btn label="Submit" color="primary" @click="addPayment"/>
           <q-btn flat label="Cancel" color="secondary" @click="closePaymentDialog"/>
         </q-card-actions>
       </q-card>
@@ -424,6 +468,8 @@ export default {
   },
   data () {
     return {
+      doc_name: null,
+      doc_file: null,
       paymentDialog: false,
       currencyOptions: [
         {
@@ -440,7 +486,7 @@ export default {
       paymentModel: {
         payment_via: null,
         currency: 'INR',
-        transaction_id: 'null',
+        transaction_id: null,
         amount: 0.00
       },
       tab: 'details',
@@ -514,6 +560,84 @@ export default {
     })
   },
   methods: {
+    uploadDoc () {
+      this.$refs.docForm.validate().then((success) => {
+        if (success) {
+          this.$q.loading.show()
+          const fD = new FormData()
+          fD.append('file', this.doc_file)
+          fD.append('name', this.doc_name)
+          this.$axios.post('quotations/' + this.$route.params.id + '/documents', fD, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }).then((res) => {
+            if (res.data.message === 'success') {
+              this.model.documents = res.data.documents
+              this.doc_name = null
+              this.doc_file = null
+            }
+          }).finally(() => this.$q.loading.hide())
+        } else {
+          this.$q.notify({
+            message: 'Error in data submitted. Please check',
+            type: 'negative'
+          })
+        }
+      })
+    },
+    deleteDocument (ind) {
+      this.$q.dialog({
+        title: 'Confirmation',
+        message: 'Do you want to continue?',
+        persistent: true,
+        cancel: true
+      }).onOk(() => {
+        this.$q.loading.show()
+        this.$axios.get('quotations/' + this.$route.params.id + '/delete_document/' + this.model.documents[ind].id).then((res) => {
+          if (res.data.message === 'success') {
+            this.model.documents = res.data.documents
+          }
+        }).finally(() => {
+          this.$q.loading.hide()
+        })
+      })
+    },
+    deletePayment (ind) {
+      this.$q.dialog({
+        title: 'Confirmation',
+        message: 'Do you want to continue?',
+        persistent: true,
+        cancel: true
+      }).onOk(() => {
+        this.$q.loading.show()
+        this.$axios.get('quotations/' + this.$route.params.id + '/delete_payment/' + this.model.payments[ind].id).then((res) => {
+          if (res.data.message === 'success') {
+            this.model.payments = res.data.payments
+          }
+        }).finally(() => {
+          this.$q.loading.hide()
+        })
+      })
+    },
+    addPayment () {
+      this.$refs.paymentForm.validate().then((success) => {
+        if (success) {
+          this.$q.loading.show()
+          this.$axios.post('quotations/' + this.$route.params.id + '/add_payment', this.paymentModel).then((res) => {
+            if (res.data.message === 'success') {
+              this.model.payments = res.data.payments
+              this.closePaymentDialog()
+            }
+          }).finally(() => this.$q.loading.hide())
+        } else {
+          this.$q.notify({
+            message: 'Error in data submitted. Please check',
+            type: 'negative'
+          })
+        }
+      })
+    },
     openPaymentDialog () {
       this.paymentDialog = true
     },

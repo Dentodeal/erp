@@ -53,6 +53,10 @@
                   <td>Delivery Date</td>
                   <td>{{delivery_date}}</td>
                 </tr>
+                <tr>
+                  <td>Type</td>
+                  <td>{{type}}</td>
+                </tr>
                 <tr v-if="grn">
                   <td>GRN No</td>
                   <td><router-link :to="'/goods_receive_notes/view/' + grn.id">{{grn.serial_no}}</router-link></td>
@@ -286,6 +290,7 @@ export default {
   },
   data () {
     return {
+      type: null,
       bill_number: null,
       supplier: {
         name: null
@@ -586,6 +591,7 @@ export default {
         this.freight_split_method = res.data.freight_split_method
         this.grn = res.data.grn
         this.return_count = res.data.return_count
+        this.type = res.data.type
       }).then(() => {
         if (!this.freight_split_method) this.freight_split_method = 'weight'
         this.$store.commit('setPageTitle', 'Purchase: ' + this.bill_number)

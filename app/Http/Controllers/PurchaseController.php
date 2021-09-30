@@ -27,6 +27,7 @@ class PurchaseController extends Controller
             'purchases.id AS id',
             'suppliers.name AS supplier_name',
             'purchases.status AS status',
+            'purchases.type AS type',
             'purchases.created_at AS created_at',
             'bill_date',
             'bill_number',
@@ -95,6 +96,14 @@ class PurchaseController extends Controller
                 'name' => 'supplier_name',
                 'label' => 'Supplier',
                 'field' => 'supplier_name',
+                'required' => true,
+                'sortable' => true,
+                'align' => 'left'
+            ],
+            [
+                'name' => 'type',
+                'label' => 'Type',
+                'field' => 'type',
                 'required' => true,
                 'sortable' => true,
                 'align' => 'left'
@@ -192,21 +201,24 @@ class PurchaseController extends Controller
     public function store(Request $request)
     {
         if($request->status != 'Draft') {
-            $grnModel = \App\GoodsReceiveNote::find($request->grn_id);
-            $grnItems = $grnModel->items;
-            $groupedGrnItems = $grnItems->groupBy('product_id')->all();
-            $groupedItems = collect($request->items)->groupBy('product_id')->all();
-            Validator::make(['items' => $grnItems->toArray()], [
-                'items.*' => [
-                    function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
-                        if(!array_key_exists($value['product_id'], $groupedItems)) {
-                            $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
-                        } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
-                            $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+            if($request->grn_id) {
+                $grnModel = \App\GoodsReceiveNote::find($request->grn_id);
+                $grnItems = $grnModel->items;
+                $groupedGrnItems = $grnItems->groupBy('product_id')->all();
+                $groupedItems = collect($request->items)->groupBy('product_id')->all();
+                
+                Validator::make(['items' => $grnItems->toArray()], [
+                    'items.*' => [
+                        function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
+                            if(!array_key_exists($value['product_id'], $groupedItems)) {
+                                $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
+                            } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
+                                $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+                            }
                         }
-                    }
-                ]
-            ])->validate();
+                    ]
+                ])->validate();
+            }
         }
         $request->validate([
             'bill_number' => 'required|unique:purchases,bill_number',
@@ -227,9 +239,10 @@ class PurchaseController extends Controller
             'round',
             'row_discount_mode',
             'remarks',
-            'grn_id',
             'freight_split_method'
         ]));
+        $model->grn_id = $request->grn_id ? $request->grn_id : 0;
+        $model->type = $request->grn_id ? 'Standard' : 'Price Adjustment';
         $model->bill_freight_includes_gst = false;
         $model->subtotal = 0;
         $model->bill_total = 0;
@@ -345,31 +358,35 @@ class PurchaseController extends Controller
     {
         $model = Purchase::find($id);
         if($request->status != 'Draft') {
-            $grnModel = \App\GoodsReceiveNote::find($model->grn_id);
-            $grnItems = $grnModel->items;
-            $groupedGrnItems = $grnItems->groupBy('product_id')->all();
+            if ($model->type == 'Standard') {
+                $grnModel = \App\GoodsReceiveNote::find($model->grn_id);
+                $grnItems = $grnModel->items;
+                $groupedGrnItems = $grnItems->groupBy('product_id')->all();
+            }
             $items = $request->items;
             $groupedItems = collect($items)->groupBy('product_id')->all();
-            Validator::make(['status' => $grnModel->status],[
-                'status' => [
-                    function($attribute, $value, $fail) {
-                        if($value != 'Active') {
-                            $fail('The GRN associated with this purchase entry is not activated. Please activate the GRN before proceeding');
+            if ($model->type == 'Standard') {
+                Validator::make(['status' => $grnModel->status],[
+                    'status' => [
+                        function($attribute, $value, $fail) {
+                            if($value != 'Active') {
+                                $fail('The GRN associated with this purchase entry is not activated. Please activate the GRN before proceeding');
+                            }
                         }
-                    }
-                ]
-            ])->validate();
-            Validator::make(['items' => $grnItems->toArray()], [
-                'items.*' => [
-                    function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
-                        if(!array_key_exists($value['product_id'], $groupedItems)) {
-                            $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
-                        } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
-                            $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+                    ]
+                ])->validate();
+                Validator::make(['items' => $grnItems->toArray()], [
+                    'items.*' => [
+                        function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
+                            if(!array_key_exists($value['product_id'], $groupedItems)) {
+                                $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
+                            } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
+                                $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+                            }
                         }
-                    }
-                ]
-            ])->validate();
+                    ]
+                ])->validate();
+            }
         }
         
         $request->validate([
@@ -501,32 +518,35 @@ class PurchaseController extends Controller
     public function sendAdmin($id)
     {
         $model = Purchase::find($id);
-        $grnModel = \App\GoodsReceiveNote::find($model->grn_id);
-        $grnItems = $grnModel->items;
-        $groupedGrnItems = $grnItems->groupBy('product_id')->all();
+        if($model->type == 'Standard') {
+            $grnModel = \App\GoodsReceiveNote::find($model->grn_id);
+            $grnItems = $grnModel->items;
+            $groupedGrnItems = $grnItems->groupBy('product_id')->all();
+        }
         $items = $model->items;
         $groupedItems = $items->groupBy('product_id')->all();
-        Validator::make(['status' => $grnModel->status],[
-            'status' => [
-                function($attribute, $value, $fail) {
-                    if($value != 'Active') {
-                        $fail('The GRN associated with this purchase entry is not activated. Please activate the GRN before proceeding');
+        if($model->type == 'Standard') {
+            Validator::make(['status' => $grnModel->status],[
+                'status' => [
+                    function($attribute, $value, $fail) {
+                        if($value != 'Active') {
+                            $fail('The GRN associated with this purchase entry is not activated. Please activate the GRN before proceeding');
+                        }
                     }
-                }
-            ]
-        ])->validate();
-        Validator::make(['items' => $grnItems->toArray()], [
-            'items.*' => [
-                function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
-                    if(!array_key_exists($value['product_id'], $groupedItems)) {
-                        $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
-                    } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
-                        $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+                ]
+            ])->validate();
+            Validator::make(['items' => $grnItems->toArray()], [
+                'items.*' => [
+                    function($attribute, $value, $fail) use ($groupedGrnItems, $groupedItems){
+                        if(!array_key_exists($value['product_id'], $groupedItems)) {
+                            $fail(\App\Product::find($value['product_id'])->name.' is missing compared to GRN');
+                        } else if(collect($groupedGrnItems[$value['product_id']])->sum('qty') != collect($groupedItems[$value['product_id']])->sum('qty')) {
+                            $fail('Qty mismatch for '.\App\Product::find($value['product_id'])->name.' against GRN, Given: '.collect($groupedItems[$value['product_id']])->sum('qty').', Required: '.collect($groupedGrnItems[$value['product_id']])->sum('qty'));
+                        }
                     }
-                }
-            ]
-        ])->validate();
-        
+                ]
+            ])->validate();
+        }
         $model->status = 'Pending Approval';
         $model->save();
         activity()

@@ -23,6 +23,9 @@
                                 <q-td class="text-left">
                                     {{props.row.purchase.status}}
                                 </q-td>
+                                <q-td class="text-left">
+                                  {{props.row.purchase.type}}
+                                </q-td>
                                 <q-td class="text-right">
                                     {{props.row.qty}}
                                 </q-td>
@@ -74,6 +77,13 @@ export default {
           name: 'status',
           label: 'Status',
           field: (row) => row.purchase.status,
+          align: 'left',
+          sortable: true
+        },
+        {
+          name: 'type',
+          label: 'Type',
+          field: (row) => row.purchase.type,
           align: 'left',
           sortable: true
         },

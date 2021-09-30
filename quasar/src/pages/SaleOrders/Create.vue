@@ -888,7 +888,7 @@ export default {
       expiry_data: null,
       stock: null,
       expiryOptions: [],
-      cost: 0,
+      cost: null,
       min_margin: 0,
       row_taxable: null,
       row_tax_amount: null,
@@ -1133,10 +1133,30 @@ export default {
               label: 'Continue'
             }
           }).onOk(() => {
-            this.addRow()
+            if (this.cost > 0 && this.rate < this.cost) {
+              this.$q.dialog({
+                title: 'Warning',
+                message: 'The rate you entered is less than cost[' + this.cost + ']',
+                cancel: true
+              }).onOk(() => {
+                this.addRow()
+              })
+            } else {
+              this.addRow()
+            }
           })
         } else {
-          this.addRow()
+          if (this.cost > 0 && this.rate < this.cost) {
+            this.$q.dialog({
+              title: 'Warning',
+              message: 'The rate you entered is less than cost [' + this.cost + ']. Continue?',
+              cancel: true
+            }).onOk(() => {
+              this.addRow()
+            })
+          } else {
+            this.addRow()
+          }
         }
       }
     },
@@ -1182,7 +1202,7 @@ export default {
       this.stock = null
       this.expiryOptions = []
       this.expiry_data = null
-      this.cost = 0
+      this.cost = null
       this.min_margin = 0
       this.$nextTick(() => {
         this.$refs.product.focus()
@@ -1740,6 +1760,7 @@ export default {
     getExpiryOptions (productId) {
       this.$axios.get('products/basic/' + productId + '/' + this.model.warehouse.id).then((res) => {
         this.expiryOptions = res.data.expiry_options
+        this.cost = res.data.cost
       })
     },
     dateValidation (v) {

@@ -295,6 +295,10 @@ Route::middleware(['auth:sanctum','checkuserisactive'])->group(function(){
     Route::get('emails/filterables','EmailController@filterables');
     Route::apiResource('emails','EmailController');
 
+    Route::get('quotations/{id}/delete_document/{doc_id}','QuotationController@deleteDocument');
+    Route::post('quotations/{id}/documents','QuotationController@addDocuments');
+    Route::get('quotations/{id}/delete_payment/{payment_id}','QuotationController@deletePayment');
+    Route::post('quotations/{id}/add_payment','QuotationController@addPayment');
     Route::post('quotations/partial_convert/{id}','QuotationController@partialConvert');
     Route::get('quotations/convert/{id}','QuotationController@convert');
     Route::post('quotations/export/{id}','QuotationController@export');

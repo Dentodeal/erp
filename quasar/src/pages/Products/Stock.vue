@@ -18,7 +18,7 @@
                               title="Stock Status"
                               :columns="columns"
                               :data="stocks"
-                              rows-per-page-options="0"
+                              :rows-per-page-options="[0]"
                           >
                               <template v-slot:body="props">
                                   <q-tr :props="props">

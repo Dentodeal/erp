@@ -17,7 +17,9 @@ export default function (/* { ssrContext } */) {
       roles: [],
       permissions: [],
       pageTitle: 'ApexionERP',
-      toolbarButtons: null
+      toolbarButtons: null,
+      apiURL: process.env.PROD ? 'https://app.apexion.ml/api' : 'http://api.erp.ss/api',
+      baseURL: process.env.PROD ? 'https://app.apexion.ml' : 'http://api.erp.ss'
     },
     getters: {
       isAuthenticated: (state) => {
@@ -37,6 +39,12 @@ export default function (/* { ssrContext } */) {
       },
       user: (state) => {
         return state.user
+      },
+      apiURL: (state) => {
+        return state.apiURL
+      },
+      baseURL: (state) => {
+        return state.baseURL
       }
     },
     mutations: {

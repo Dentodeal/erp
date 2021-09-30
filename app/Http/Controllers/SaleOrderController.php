@@ -46,6 +46,9 @@ class SaleOrderController extends Controller
             if($value == 'status'){
                 $select_arr[$key] = 'sale_orders.status AS status';
             }
+            if($value == 'type'){
+                $select_arr[$key] = 'sale_orders.type AS type';
+            }
             if($value == 'shipment_status'){
                 $select_arr[$key] = 'shipments.status AS shipment_status';
             }
@@ -97,6 +100,9 @@ class SaleOrderController extends Controller
                 }
                 if($key == 'status'){
                     $model->whereIn('sale_orders.status',$val);
+                }
+                if($key == 'type'){
+                    $model->whereIn('sale_orders.type',$val);
                 }
                 if($key == 'shipment_status'){
                     $model->whereIn('shipments.status',$val);
@@ -161,6 +167,14 @@ class SaleOrderController extends Controller
                 'name' => 'status',
                 'label' => 'Status',
                 'field' => 'status',
+                'required' => false,
+                'sortable' => true,
+                'align' => 'left'
+            ],
+            [
+                'name' => 'type',
+                'label' => 'Type',
+                'field' => 'type',
                 'required' => false,
                 'sortable' => true,
                 'align' => 'left'
@@ -286,6 +300,14 @@ class SaleOrderController extends Controller
                 'slug' => 'status',
                 'searcheable' => false,
                 'options' => SaleOrder::select('status')->distinct()->get()->pluck('status'),
+                'value' => []
+            ],
+            [
+                'field_type' => 'Selection',
+                'name' => 'Type',
+                'slug' => 'type',
+                'searcheable' => false,
+                'options' => ['Standard','Export'],
                 'value' => []
             ],
             [

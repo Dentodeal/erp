@@ -66,7 +66,6 @@
                                 :columns="columns"
                                 :data="purchases"
                                 :title="'Purchases of '+name"
-                                row-key="bill_number"
                             >
                                 <template v-slot:body="props">
                                   <q-tr :props="props">
@@ -78,6 +77,9 @@
                                     </q-td>
                                     <q-td class="text-left">
                                         {{props.row.purchase.status}}
+                                    </q-td>
+                                    <q-td class="text-left">
+                                        {{props.row.purchase.type}}
                                     </q-td>
                                     <q-td class="text-right">
                                         {{props.row.purchase.bill_date}}
@@ -191,6 +193,12 @@ export default {
           align: 'left'
         },
         {
+          name: 'type',
+          label: 'Type',
+          field: 'type',
+          align: 'left'
+        },
+        {
           name: 'bill_date',
           label: 'Bill Date',
           field: 'bill_date',
@@ -223,7 +231,7 @@ export default {
   methods: {
     loadPurchases () {
       this.$axios.get('products/purchases/' + this.$route.params.id).then((res) => {
-        this.purchases = res.data
+        this.purchases = res.data.filter((item) => item.purchase !== null)
       })
     },
     saveMinMargin () {
