@@ -1133,7 +1133,7 @@ export default {
               label: 'Continue'
             }
           }).onOk(() => {
-            if (this.cost > 0 && this.rate < this.cost) {
+            if (this.cost > 0 && parseFloat(this.rate) < parseFloat(this.cost)) {
               this.$q.dialog({
                 title: 'Warning',
                 message: 'The rate you entered is less than cost[' + this.cost + ']',
