@@ -108,6 +108,9 @@
             @if($include_hsn_column)
             <td class="table">HSN</td>
             @endif
+            @if($include_country_of_origin)
+            <td class="table">Origin Country</td>
+            @endif
             <td class="table width-5 nowrapspace">Qty</td>
             @if($include_gst_column && $quotation->type !== 'Export')
             <td class="table width-5 nowrapspace">GST</td>
@@ -126,6 +129,9 @@
             @if($include_hsn_column)
             <td class="table">{{$item->product ? $item->product->hsn : ''}}</td>
             @endif
+            @if($include_country_of_origin)
+            <td class="table">{{$item->product ? ($item->product->origin_country ?: '') : ''}}</td>
+            @endif
             <td class="table text-right">{{$item->qty}}</td>
             @if($include_gst_column && $quotation->type !== 'Export')
             <td class="table text-right">{{$item->gst}}%</td>
@@ -141,6 +147,9 @@
         <tr class="table bg-white dark">
             <td class="table"></td>
             @if($include_hsn_column)
+            <td class="table"></td>
+            @endif
+            @if($include_country_of_origin)
             <td class="table"></td>
             @endif
             <td class="table text-right"><b>Total</b></td>
@@ -159,6 +168,9 @@
         <tr class="table">
             <td class="table"></td>
             @if($include_hsn_column)
+            <td class="table"></td>
+            @endif
+            @if($include_country_of_origin)
             <td class="table"></td>
             @endif
             <td class="table"></td>
@@ -180,6 +192,9 @@
             @if($include_hsn_column)
             <td class="table"></td>
             @endif
+            @if($include_country_of_origin)
+            <td class="table"></td>
+            @endif
             <td class="table"></td>
             <td class="table"></td>
             @if($include_gst_column && $quotation->type !== 'Export')
@@ -197,6 +212,9 @@
         <tr class="table">
             <td class="table"></td>
             @if($include_hsn_column)
+            <td class="table"></td>
+            @endif
+            @if($include_country_of_origin)
             <td class="table"></td>
             @endif
             <td class="table"></td>
@@ -218,6 +236,9 @@
             @if($include_hsn_column)
             <td class="table"></td>
             @endif
+            @if($include_country_of_origin)
+            <td class="table"></td>
+            @endif
             <td class="table"></td>
             <td class="table"></td>
             @if($include_gst_column && $quotation->type !== 'Export')
@@ -237,6 +258,9 @@
             @if($include_hsn_column)
             <td class="table"></td>
             @endif
+            @if($include_country_of_origin)
+            <td class="table"></td>
+            @endif
             <td class="table"></td>
             <td class="table"></td>
             @if($include_gst_column && $quotation->type !== 'Export')
@@ -253,6 +277,9 @@
         <tr class="table">
             <td class="table"></td>
             @if($include_hsn_column)
+            <td class="table"></td>
+            @endif
+            @if($include_country_of_origin)
             <td class="table"></td>
             @endif
             <td class="table"></td>

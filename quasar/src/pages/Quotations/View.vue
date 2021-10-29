@@ -391,6 +391,8 @@
             <div class="col" v-if="model.type == 'Export'">
               <q-checkbox v-model="export_use_mask_name" label="Use Mask Name ?"/>
               <q-checkbox v-model="export_include_hsn" label="Include HSN Column ?"/>
+              <q-checkbox v-model="export_include_country_of_origin" label="Include Country of Origin ?"/>
+              <!--<q-checkbox v-model="export_include_lot_number" label="Include Lot Number ?"/>-->
             </div>
           </div>
         </q-card-section>
@@ -544,6 +546,8 @@ export default {
       export_include_gst_column: true,
       export_use_mask_name: false,
       export_include_hsn: false,
+      export_include_country_of_origin: false,
+      // export_include_lot_number: false,
       convertDialog: false,
       billingAddress: null,
       search: null,
@@ -677,6 +681,8 @@ export default {
           include_gst_column: this.export_include_gst_column,
           use_mask_name: this.export_use_mask_name,
           include_hsn_column: this.export_include_hsn,
+          include_country_of_origin: this.export_include_country_of_origin,
+          // include_lot_number: this.export_include_lot_number,
           mode: this.export_mode
         }
       }).then((response) => {

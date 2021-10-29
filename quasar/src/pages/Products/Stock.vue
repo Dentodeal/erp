@@ -31,6 +31,9 @@
                                       <q-td key="expiry_date" :props="props">
                                           {{props.row.expiry_date}}
                                       </q-td>
+                                      <q-td key="lot_number" :props="props">
+                                          {{props.row.lot_number}}
+                                      </q-td>
                                       <q-td key="reservation" :props="props">
                                           <q-chip color="green-10" text-color="white" v-if="props.row.reservable_id == 0">Available</q-chip>
                                           <q-chip color="orange-10" text-color="white" v-else>Reserved</q-chip>
@@ -114,6 +117,13 @@ export default {
           label: 'Expiry Date',
           field: 'expiry_date',
           align: 'right',
+          sortable: true
+        },
+        {
+          name: 'lot_number',
+          label: 'Lot No.',
+          field: 'lot_number',
+          align: 'left',
           sortable: true
         },
         {

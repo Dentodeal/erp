@@ -23,6 +23,14 @@
                     <q-btn color="grey-9" round flat icon="delete" @click="deleteItem(props.rowIndex)"/>
                   </q-td>
                 </template>
+                <template v-slot:body-cell-qty="props">
+                  <q-td class="text-right">
+                    {{props.value}}
+                    <q-popup-edit v-model="props.row.qty" buttons>
+                      <q-input v-model.number="props.row.qty" dense autofocus type="number"/>
+                    </q-popup-edit>
+                  </q-td>
+                </template>
               </q-table>
             </div>
           </div>
@@ -46,8 +54,8 @@
         <q-card-section>
           <q-table
           title="Items"
-          :data="productRepository"
-          :columns="[{ name:'name', required: true, label: 'Item', align: 'left', field: row => row.name, sortable: true }]"
+          :data="sale_order.items"
+          :columns="[{ name:'name', required: true, label: 'Item', align: 'left', field: row => row.product.name, sortable: true }]"
           selection="multiple"
           :selected.sync="model.items"
           :filter="search"
@@ -80,9 +88,15 @@ export default {
       columns: [
         {
           name: 'product',
-          field: row => row.name,
+          field: row => row.product.name,
           label: 'Item',
           align: 'left'
+        },
+        {
+          name: 'qty',
+          field: 'qty',
+          label: 'Qty',
+          align: 'right'
         },
         {
           name: 'action',
@@ -95,7 +109,6 @@ export default {
       sale_order: {
         serial_no: null
       },
-      productRepository: [],
       model: {
         name: null,
         items: []
@@ -108,7 +121,6 @@ export default {
     this.$store.commit('setPageTitle', 'Packaging')
     this.$axios.get('sale_orders/' + this.$route.params.so_id).then((res) => {
       this.sale_order = res.data
-      this.productRepository = this.$_.map(res.data.items, (item) => item.product)
     })
     if (this.$route.params.id) {
       this.$axios.get('packaging/' + this.$route.params.so_id + '/' + this.$route.params.id).then((res) => {
@@ -153,6 +165,17 @@ export default {
               type: 'positive'
             })
             this.$router.back()
+          }
+        }).catch((err) => {
+          if (err.response.status === 422) {
+            let str = ''
+            Object.keys(err.response.data.errors).forEach((key) => {
+              str += err.response.data.errors[key][0] + '</br>'
+            })
+            this.$q.dialog({
+              html: true,
+              message: str
+            })
           }
         })
       }

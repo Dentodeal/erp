@@ -71,6 +71,9 @@
                           <q-td class="text-right">
                             {{props.row.expiry_date}}
                           </q-td>
+                          <q-td class="">
+                            {{props.row.lot_number}}
+                          </q-td>
                           <q-td class="text-right">
                               {{props.row.qty}}
                           </q-td>
@@ -152,6 +155,13 @@ export default {
           label: 'Expiry Date',
           sortable: true,
           align: 'right'
+        },
+        {
+          name: 'lot_number',
+          field: 'lot_number',
+          label: 'Lot No.',
+          sortable: true,
+          align: 'left'
         },
         {
           name: 'qty',

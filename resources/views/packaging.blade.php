@@ -1,10 +1,16 @@
 <h2 class="text-center">{{$data['name']}}</h2>
 <table class="table mt-20" >
     <tbody>
+        <tr class="table">
+            <td class="table">#</td>
+            <td class="table">Item</td>
+            <td class="table text-right">Qty</td>
+        </tr>
         @foreach($data['items'] as $index => $item)
         <tr class="table">
             <td class="table">{{$index + 1}}</td>
             <td class="table">{{$item->name}}</td>
+            <td class="table text-right">{{$item->pivot->qty}}</td>
         </tr>
         @endforeach
     </tbody>

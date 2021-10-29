@@ -9,7 +9,7 @@ class PackagingBox extends Model
     protected $table = 'packaging_boxes';
 
     public function items() {
-        return $this->belongsToMany('App\Product', 'packaging_box_item', 'box_id', 'product_id');
+        return $this->belongsToMany('App\Product', 'packaging_box_item', 'box_id', 'product_id')->withPivot('qty');
     }
 
     public function sale_order() {

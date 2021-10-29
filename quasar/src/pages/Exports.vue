@@ -163,6 +163,7 @@ export default {
             { label: 'SKU', value: 'sku' },
             { label: 'Status', value: 'status', filterType: 'selection', filterOptions: ['Active', 'Pending Approval', 'Approved', 'Draft'], filterBy: [] },
             { label: 'GST', value: 'gst', filterType: 'selection', filterOptions: ['5', '12', '18'], filterBy: [] },
+            { label: 'MRP', value: 'mrp' },
             { label: 'HSN', value: 'hsn' },
             { label: 'GTIN', value: 'gtin' },
             { label: 'MPN / Reorder Code', value: 'mpn' },

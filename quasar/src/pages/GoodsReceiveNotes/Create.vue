@@ -129,6 +129,21 @@
                                                 </q-input>
                                             </q-popup-edit>
                                         </q-td>
+                                        <q-td class="text">
+                                            {{props.row.lot_number}}
+                                            <q-popup-edit v-model="props.row.qtlot_numbery"
+                                                buttons
+                                                label-set="Save"
+                                                label-cancel="Close"
+                                                >
+                                                <q-input
+                                                    ref="lot_no_edit"
+                                                    v-model="props.row.lot_number"
+                                                    dense
+                                                    autofocus
+                                                />
+                                            </q-popup-edit>
+                                        </q-td>
                                         <q-td class="text-right">
                                             {{props.row.qty}}
                                             <q-popup-edit v-model="props.row.qty"
@@ -216,6 +231,9 @@
                           </q-input>
                         </div>
                         <div class="col">
+                          <q-input label="Lot No." tabindex="3" square outlined dense v-model="lot_number"/>
+                        </div>
+                        <div class="col">
                             <q-input tabindex="3" outlined square dense v-model="qty" label="Qty" class="input-right"
                               @focus="$event.target.select()"
                               ref="qty"
@@ -262,6 +280,7 @@ export default {
       gstOptions: [],
       product: null,
       qty: null,
+      lot_number: null,
       expiry_date: null,
       columns: [
         {
@@ -281,6 +300,13 @@ export default {
           name: 'expiry_date',
           field: 'expiry_date',
           label: 'Exp.Date',
+          sortable: false
+        },
+        {
+          name: 'lot_number',
+          field: 'lot_number',
+          label: 'Lot No.',
+          align: 'left',
           sortable: false
         },
         {
@@ -407,12 +433,14 @@ export default {
           product: this.product,
           expiry_date: this.expiry_date,
           expirable: this.expirable,
-          qty: this.qty
+          qty: this.qty,
+          lot_number: this.lot_number
         })
         this.product = null
         this.qty = null
         this.expiry_date = null
         this.expirable = null
+        this.lot_number = null
         this.$nextTick(() => {
           this.$refs.product.focus()
         })
@@ -451,7 +479,7 @@ export default {
           supplier_id: this.supplier.id,
           delivery_date: this.delivery_date,
           warehouse_id: this.warehouse_id,
-          items: this.$_.map(this.items, this.$_.partialRight(this.$_.pick, ['product_id', 'qty', 'expirable', 'expiry_date'])),
+          items: this.$_.map(this.items, this.$_.partialRight(this.$_.pick, ['product_id', 'qty', 'expirable', 'expiry_date', 'lot_number'])),
           remarks: this.remarks
         }
         let route = 'goods_receive_notes'
