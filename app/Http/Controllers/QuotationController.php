@@ -307,6 +307,10 @@ class QuotationController extends Controller
             $quotationItemsModel = new \App\QuotationItem($arr);
             $model->items()->save($quotationItemsModel);
         }
+        activity('debug')->withProperties([
+            'input' => $request->toArray(),
+            'quotation_id' => $model->id
+        ])->log('Create Quotation Input');
         return response()->json(['message' => 'success']);
     }
 
@@ -409,6 +413,10 @@ class QuotationController extends Controller
             }
             $count++;
         }
+        activity('debug')->withProperties([
+            'input' => $request->toArray(),
+            'quotation_id' => $model->id
+        ])->log('Update Quotation Input');
         return response()->json(['message' => 'success']);
     }
 

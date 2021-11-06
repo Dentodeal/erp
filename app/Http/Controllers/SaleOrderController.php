@@ -11,6 +11,10 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use App\Rules\SaleOrderExpiryStock;
 use Barryvdh\DomPDF\Facade as PDF;
+use Maatwebsite\Excel\Concerns\WithProperties;
+use Spatie\Activitylog\ActivityLogger;
+use Spatie\Activitylog\Contracts\Activity;
+use Spatie\Activitylog\Models\Activity as ModelsActivity;
 
 class SaleOrderController extends Controller
 {
@@ -21,127 +25,124 @@ class SaleOrderController extends Controller
      */
     public function index(Request $request)
     {
-        $visibleColumns = getVisibleColumns($request, 'sale_orders_index_visible_columns', ['serial_no','customer_name','status','created_at']);
+        $visibleColumns = getVisibleColumns($request, 'sale_orders_index_visible_columns', ['serial_no', 'customer_name', 'status', 'created_at']);
         $filters = getFilters($request, 'sale_orders_index_filtered');
         $search = getSearch($request, 'sale_orders_index_search');
         $pagination = getPagination($request, 'sale_orders_index_pagination');
         // dd($pagination);
         $select_arr = ['id'];
-        foreach($visibleColumns as $vc){
-            if(!in_array($vc,$select_arr))
+        foreach ($visibleColumns as $vc) {
+            if (!in_array($vc, $select_arr))
                 $select_arr[] = $vc;
         }
-        foreach(array_keys($filters) as $filter_key){
-            if(!in_array($filter_key,$select_arr))
+        foreach (array_keys($filters) as $filter_key) {
+            if (!in_array($filter_key, $select_arr))
                 $select_arr[] = $filter_key;
         }
 
-        foreach($select_arr as $key => $value){
-            if($value == 'id'){
+        foreach ($select_arr as $key => $value) {
+            if ($value == 'id') {
                 $select_arr[$key] = 'sale_orders.id AS id';
             }
-            if($value == 'customer_name'){
+            if ($value == 'customer_name') {
                 $select_arr[$key] = 'customers.name AS customer_name';
             }
-            if($value == 'status'){
+            if ($value == 'status') {
                 $select_arr[$key] = 'sale_orders.status AS status';
             }
-            if($value == 'type'){
+            if ($value == 'type') {
                 $select_arr[$key] = 'sale_orders.type AS type';
             }
-            if($value == 'shipment_status'){
+            if ($value == 'shipment_status') {
                 $select_arr[$key] = 'shipments.status AS shipment_status';
             }
-            if($value == 'serial_no'){
+            if ($value == 'serial_no') {
                 $select_arr[$key] = 'sale_orders.serial_no AS serial_no';
             }
-            if($value == 'created_at'){
+            if ($value == 'created_at') {
                 $select_arr[$key] = 'sale_orders.created_at AS created_at';
             }
-            if($value == 'created_by_name'){
+            if ($value == 'created_by_name') {
                 $select_arr[$key] = 'created_by.name AS created_by_name';
             }
-            if($value == 'representative_name'){
+            if ($value == 'representative_name') {
                 $select_arr[$key] = 'representative.name AS representative_name';
             }
-            if($value == 'invoiced_by'){
+            if ($value == 'invoiced_by') {
                 $select_arr[$key] = 'invoiced_by.name AS invoiced_by';
             }
         }
         $select_str = '';
-        foreach($select_arr as $it){
+        foreach ($select_arr as $it) {
 
-                $select_str .= $it.',';
-            
+            $select_str .= $it . ',';
         }
         // dd($select_str);
-        $select_str = rtrim($select_str,",");
+        $select_str = rtrim($select_str, ",");
         //dd($pageIndexVisibleColumnModel);
-        $model = SaleOrder::select(DB::raw($select_str))->join('customers','sale_orders.customer_id','=','customers.id')
-                            ->where('sale_orders.status','<>','INIT_BAL');
-        if(strpos($select_str,'shipment_status') || array_key_exists('shipment_status',$filters)) {
-            $model->leftJoin('shipments','shipments.sale_order_id','=','sale_orders.id');
+        $model = SaleOrder::select(DB::raw($select_str))->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+            ->where('sale_orders.status', '<>', 'INIT_BAL');
+        if (strpos($select_str, 'shipment_status') || array_key_exists('shipment_status', $filters)) {
+            $model->leftJoin('shipments', 'shipments.sale_order_id', '=', 'sale_orders.id');
         }
-        if(strpos($select_str,'representative_name')|| array_key_exists('representative_name',$filters)) {
-            $model->join(DB::raw('users representative'),'sale_orders.representative_id','=','representative.id');
-        }
-
-        if(strpos($select_str,'created_by_name')|| array_key_exists('created_by_name',$filters)) {
-            $model->join(DB::raw('users created_by'),'sale_orders.created_by_id','=','created_by.id');
+        if (strpos($select_str, 'representative_name') || array_key_exists('representative_name', $filters)) {
+            $model->join(DB::raw('users representative'), 'sale_orders.representative_id', '=', 'representative.id');
         }
 
-        if(strpos($select_str,'invoiced_by')|| array_key_exists('invoiced_by',$filters)) {
-            $model->leftJoin(DB::raw('users invoiced_by'),'sale_orders.invoiced_by_id','=','invoiced_by.id');
+        if (strpos($select_str, 'created_by_name') || array_key_exists('created_by_name', $filters)) {
+            $model->join(DB::raw('users created_by'), 'sale_orders.created_by_id', '=', 'created_by.id');
         }
-        if(count($filters) > 0){
-            foreach($filters as $key => $val){
-                if($key == 'representative_name'){
-                    $model->whereIn('representative.name',$val);
+
+        if (strpos($select_str, 'invoiced_by') || array_key_exists('invoiced_by', $filters)) {
+            $model->leftJoin(DB::raw('users invoiced_by'), 'sale_orders.invoiced_by_id', '=', 'invoiced_by.id');
+        }
+        if (count($filters) > 0) {
+            foreach ($filters as $key => $val) {
+                if ($key == 'representative_name') {
+                    $model->whereIn('representative.name', $val);
                 }
-                if($key == 'status'){
-                    $model->whereIn('sale_orders.status',$val);
+                if ($key == 'status') {
+                    $model->whereIn('sale_orders.status', $val);
                 }
-                if($key == 'type'){
-                    $model->whereIn('sale_orders.type',$val);
+                if ($key == 'type') {
+                    $model->whereIn('sale_orders.type', $val);
                 }
-                if($key == 'shipment_status'){
-                    $model->whereIn('shipments.status',$val);
+                if ($key == 'shipment_status') {
+                    $model->whereIn('shipments.status', $val);
                 }
-                if($key == 'source'){
-                    $model->whereIn('source',$val);
+                if ($key == 'source') {
+                    $model->whereIn('source', $val);
                 }
             }
         }
         //dd($model->toSql());
         if ($search) {
-            $chunks = explode(" ",$search);
-            $model->where(function ($query) use ($chunks,$search){
+            $chunks = explode(" ", $search);
+            $model->where(function ($query) use ($chunks, $search) {
                 foreach ($chunks as $it) {
-                    if(strlen($it) > 0)
-                    $query->where('sale_orders.serial_no','like','%'.$search.'%');
-                    $query->orWhere('customers.name','like','%'.$search.'%');
+                    if (strlen($it) > 0)
+                        $query->where('sale_orders.serial_no', 'like', '%' . $search . '%');
+                    $query->orWhere('customers.name', 'like', '%' . $search . '%');
                 }
             });
         }
-        if($pagination['sortBy'])
-        {
-            $model->orderBy($pagination['sortBy'],$pagination['desc']);
+        if ($pagination['sortBy']) {
+            $model->orderBy($pagination['sortBy'], $pagination['desc']);
+        } else {
+            $model->orderBy('id', 'DESC');
         }
-        else{
-            $model->orderBy('id','DESC');
-        }
-        
+
 
         return response()->json([
             'link_key' => 'serial_no',
             'visible_columns' => $visibleColumns,
-            'model' => $model->paginate($pagination['rpp'],['*'],'page',$pagination['page']),
+            'model' => $model->paginate($pagination['rpp'], ['*'], 'page', $pagination['page']),
             'sortby' => $pagination['sortBy'],
             'descending' => $pagination['desc'] == 'DESC' ? true : false,
             'filtered' => $filters,
             'search' => $search,
             //'attributes' => $allAttributes
-          ]);
+        ]);
     }
 
     public function getColumns()
@@ -307,7 +308,7 @@ class SaleOrderController extends Controller
                 'name' => 'Type',
                 'slug' => 'type',
                 'searcheable' => false,
-                'options' => ['Standard','Export'],
+                'options' => ['Standard', 'Export'],
                 'value' => []
             ],
             [
@@ -331,11 +332,10 @@ class SaleOrderController extends Controller
                 'name' => 'Representative',
                 'slug' => 'representative_name',
                 'searcheable' => false,
-                'options' => \App\User::select('users.id','users.name')->join('user_roles','user_roles.user_id','=','users.id')->join('roles','roles.id','=','user_roles.role_id')->where('roles.name','=','Sales')->get()->pluck('name'),
+                'options' => \App\User::select('users.id', 'users.name')->join('user_roles', 'user_roles.user_id', '=', 'users.id')->join('roles', 'roles.id', '=', 'user_roles.role_id')->where('roles.name', '=', 'Sales')->get()->pluck('name'),
                 'value' => []
             ],
         ];
-
     }
 
     /**
@@ -357,64 +357,63 @@ class SaleOrderController extends Controller
     public function store(Request $request)
     {
         $collection = collect($request->items);
-        $groupedByProductId = $collection->groupBy('product.id');        
+        $groupedByProductId = $collection->groupBy('product.id');
         $request->validate([
             'items.*' => [
-                function($attribute, $item, $fail) use ($groupedByProductId) {
+                function ($attribute, $item, $fail) use ($groupedByProductId) {
                     $product = \App\Product::find($item['product']['id']);
-                    if($product->expirable) {
-                        if(!$item['expiry_date']) $fail($product->name.'?Missing?-?-');
+                    if ($product->expirable) {
+                        if (!$item['expiry_date']) $fail($product->name . '?Missing?-?-');
                         else {
                             $arr = [];
-                            foreach($groupedByProductId->get($product->id) as $it)
-                            {   
+                            foreach ($groupedByProductId->get($product->id) as $it) {
                                 $arr[$it['expiry_date']] = array_key_exists($it['expiry_date'], $arr) ? $arr[$it['expiry_date']] + (int)$it['qty'] : (int)$it['qty'];
                             }
                             $availableStockForExpiry = 0;
                             $m = DB::table('product_stock')->where([
-                                ['expiry_date','=',$item['expiry_date']],
-                                ['reservable_id','=',0],
-                                ['product_id','=',$item['product']['id']]
+                                ['expiry_date', '=', $item['expiry_date']],
+                                ['reservable_id', '=', 0],
+                                ['product_id', '=', $item['product']['id']]
                             ])->first();
-                            if($m) $availableStockForExpiry = $m->qty;
+                            if ($m) $availableStockForExpiry = $m->qty;
                             // dd($availableStockForExpiry);
-                            if($arr[$item['expiry_date']] > $availableStockForExpiry)
-                            {
-                                $fail($product->name.'?'.$item['expiry_date'].'?'.$arr[$item['expiry_date']].'?'.$availableStockForExpiry);
+                            if ($arr[$item['expiry_date']] > $availableStockForExpiry) {
+                                $fail($product->name . '?' . $item['expiry_date'] . '?' . $arr[$item['expiry_date']] . '?' . $availableStockForExpiry);
                             }
                         }
                     } else {
                         $totalQty = 0;
-                        foreach($groupedByProductId->get($product->id) as $it)
-                        {   
+                        foreach ($groupedByProductId->get($product->id) as $it) {
                             $totalQty += (int)$it['qty'];
                         }
                         $availableStock = 0;
                         $m = DB::table('product_stock')->where([
-                            ['expiry_date','=',NULL],
-                            ['reservable_id','=',0],
-                            ['product_id','=',$item['product']['id']]
+                            ['expiry_date', '=', NULL],
+                            ['reservable_id', '=', 0],
+                            ['product_id', '=', $item['product']['id']]
                         ])->first();
-                        if($m) $availableStock = $m->qty;
-                        if($totalQty > $availableStock)
-                        {
-                            $fail($product->name.'?'.'-'.'?'.$totalQty.'?'.$availableStock);
+                        if ($m) $availableStock = $m->qty;
+                        if ($totalQty > $availableStock) {
+                            $fail($product->name . '?' . '-' . '?' . $totalQty . '?' . $availableStock);
                         }
-
                     }
                 }
             ]
         ]);
-        
+
         //-=======================Validation -======================================
         $model = SaleOrder::createEntry($request->all());
-        SaleOrder::reserveStock($model,$model->items()->get());
+        activity('debug')->withProperties([
+            'input' => $request->toArray(),
+            'sale_order_id' => $model->id
+        ])->log('Create Sale Order Input');
+        SaleOrder::reserveStock($model, $model->items()->get());
         activity()
             ->causedBy(request()->user())
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('created');
-        return response()->json(['message'=>'success','id' => $model->id]);
+        return response()->json(['message' => 'success', 'id' => $model->id]);
     }
 
     /**
@@ -443,12 +442,12 @@ class SaleOrderController extends Controller
         return $model;
     }
 
-    public function getSaleReturnItems ($id) 
+    public function getSaleReturnItems($id)
     {
         $model = SaleOrder::find($id);
         $returns_ids = $model->sale_returns()->get()->pluck('id');
         return [
-            'items' => \App\SaleReturnItem::with(['product','sale_return'])->whereIn('sale_return_id',$returns_ids)->get(),
+            'items' => \App\SaleReturnItem::with(['product', 'sale_return'])->whereIn('sale_return_id', $returns_ids)->get(),
             'model' => $model
         ];
     }
@@ -478,85 +477,85 @@ class SaleOrderController extends Controller
         $collection = collect($request->items);
         $groupedByProductId = $collection->groupBy('product.id');
         // dd($groupedByProductId);
-        SaleOrder::revertStock($model,$model->items);           
+        SaleOrder::revertStock($model, $model->items);
         $validator = Validator::make($request->all(), [
             'items.*' => [
-                function($attribute, $item, $fail) use($groupedByProductId) {
+                function ($attribute, $item, $fail) use ($groupedByProductId) {
                     $product = \App\Product::find($item['product']['id']);
-                    if($product->expirable) {
-                        if(!$item['expiry_date']) $fail($product->name.'?Missing?-?-');
+                    if ($product->expirable) {
+                        if (!$item['expiry_date']) $fail($product->name . '?Missing?-?-');
                         else {
                             $arr = [];
-                            foreach($groupedByProductId->get($product->id) as $it)
-                            {   
+                            foreach ($groupedByProductId->get($product->id) as $it) {
                                 $arr[$it['expiry_date']] = array_key_exists($it['expiry_date'], $arr) ? $arr[$it['expiry_date']] + (int)$it['qty'] : (int)$it['qty'];
                             }
                             $availableStockForExpiry = 0;
                             $m = DB::table('product_stock')->where([
-                                ['expiry_date','=',$item['expiry_date']],
-                                ['reservable_id','=',0],
-                                ['product_id','=',$item['product']['id']]
+                                ['expiry_date', '=', $item['expiry_date']],
+                                ['reservable_id', '=', 0],
+                                ['product_id', '=', $item['product']['id']]
                             ])->first();
-                            if($m) $availableStockForExpiry = $m->qty;
+                            if ($m) $availableStockForExpiry = $m->qty;
                             // dd($availableStockForExpiry);
-                            if($arr[$item['expiry_date']] > $availableStockForExpiry)
-                            {
-                                $fail($product->name.'?'.$item['expiry_date'].'?'.$arr[$item['expiry_date']].'?'.$availableStockForExpiry);
+                            if ($arr[$item['expiry_date']] > $availableStockForExpiry) {
+                                $fail($product->name . '?' . $item['expiry_date'] . '?' . $arr[$item['expiry_date']] . '?' . $availableStockForExpiry);
                             }
                         }
                     } else {
                         $totalQty = 0;
-                        foreach($groupedByProductId->get($product->id) as $it)
-                        {   
+                        foreach ($groupedByProductId->get($product->id) as $it) {
                             $totalQty += (int)$it['qty'];
                         }
                         $availableStock = 0;
                         $m = DB::table('product_stock')->where([
-                            ['expiry_date','=',NULL],
-                            ['reservable_id','=',0],
-                            ['product_id','=',$item['product']['id']]
+                            ['expiry_date', '=', NULL],
+                            ['reservable_id', '=', 0],
+                            ['product_id', '=', $item['product']['id']]
                         ])->first();
-                        if($m) $availableStock = $m->qty;
-                        if($totalQty > $availableStock)
-                        {
-                            $fail($product->name.'?'.'-'.'?'.$totalQty.'?'.$availableStock);
+                        if ($m) $availableStock = $m->qty;
+                        if ($totalQty > $availableStock) {
+                            $fail($product->name . '?' . '-' . '?' . $totalQty . '?' . $availableStock);
                         }
-
                     }
                 }
             ]
         ]);
-                
+
         if ($validator->fails()) {
-            SaleOrder::reserveStock($model,$model->items);
+            SaleOrder::reserveStock($model, $model->items);
             return response()->json([
                 'errors' => $validator->errors(),
                 'message' => 'There are errors in the form submitted'
             ], 422);
         }
-        
+
         $model->updateEntry($request->all());
-        SaleOrder::reserveStock($model,$model->items()->get());
+        activity('debug')->withProperties([
+            'input' => $request->toArray(),
+            'sale_order_id' => $model->id
+        ])->log('Update Sale Order Input');
+        SaleOrder::reserveStock($model, $model->items()->get());
         activity()
             ->causedBy(request()->user())
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('updated');
-        return response()->json(['message'=>'success','id' => $model->id]);
+        return response()->json(['message' => 'success', 'id' => $model->id]);
     }
 
-    public function deleteItem ($id) {
+    public function deleteItem($id)
+    {
         $model = \App\SaleOrderItem::find($id);
-        \App\SaleOrder::revertItem($model->sale_order,$model);
+        \App\SaleOrder::revertItem($model->sale_order, $model);
         \App\ProductStock::where([
-            ['reservable_id','=',$model->sale_order->id],
-            ['reservable_type','=','App\SaleOrder'],
-            ['product_id','=',$model->product->id],
-            ['qty','=',$model->qty],
-            ['expiry_date','=',$model->expiry_date]
+            ['reservable_id', '=', $model->sale_order->id],
+            ['reservable_type', '=', 'App\SaleOrder'],
+            ['product_id', '=', $model->product->id],
+            ['qty', '=', $model->qty],
+            ['expiry_date', '=', $model->expiry_date]
         ])->delete();
         $model->delete();
-        return response()->json(['message'=>'success']); 
+        return response()->json(['message' => 'success']);
     }
 
     /**
@@ -593,7 +592,7 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('sent_for_invoice');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
     public function requestApproval($id)
     {
@@ -605,14 +604,14 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('approval_requested');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
-    public function approve(Request $request,$id)
+    public function approve(Request $request, $id)
     {
         $model = SaleOrder::find($id);
         $model->status = 'Approved';
-        $model->remarks = $model->remarks.'<br/>'.$request->remarks;
+        $model->remarks = $model->remarks . '<br/>' . $request->remarks;
         $model->revisit = 1;
         $model->save();
         activity()
@@ -620,7 +619,7 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('approved');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function requestConfirmation($id)
@@ -633,7 +632,7 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('confirmation_requested');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function confirm($id)
@@ -646,7 +645,7 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('confirmed');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function reject($id)
@@ -660,14 +659,14 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('rejected');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function invoice(Request $request, $id)
     {
         $model = SaleOrder::find($id);
         $model->registerPayment($request);
-        if($model->type == 'Standard') {
+        if ($model->type == 'Standard') {
             $model->status = 'Invoiced';
         } else {
             $model->status = 'Complete';
@@ -677,7 +676,7 @@ class SaleOrderController extends Controller
         $model->save();
         $model->customer->updateBalance();
         $user = $request->user();
-        if($model->type == 'Standard') {
+        if ($model->type == 'Standard') {
             $model->generateShipment();
             // $this->generateShipment($model);
         }
@@ -700,17 +699,16 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('completed');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function revert($id)
     {
         $model = SaleOrder::find($id);
-        if($model->status != 'Draft') {
-            if($model->status != 'Invoice Pending')
-            {
-                SaleOrder::revertStock($model,$model->items);
-                SaleOrder::reserveStock($model,$model->items);
+        if ($model->status != 'Draft') {
+            if ($model->status != 'Invoice Pending') {
+                SaleOrder::revertStock($model, $model->items);
+                SaleOrder::reserveStock($model, $model->items);
             }
             $model->status = 'Draft';
             $model->payment_status = 'Unsettled';
@@ -734,25 +732,25 @@ class SaleOrderController extends Controller
     public function cancelOrder($id)
     {
         $model = SaleOrder::find($id);
-        $this->authorize('cancel',$model);
+        $this->authorize('cancel', $model);
         $shipment = $model->shipment;
-        if($shipment) {
-            Validator::make(['status' => $model->shipment->status],[
+        if ($shipment) {
+            Validator::make(['status' => $model->shipment->status], [
                 'status' => [
-                    function($attribute,$status,$fail){
-                        if($status == 'Complete') {
+                    function ($attribute, $status, $fail) {
+                        if ($status == 'Complete') {
                             $fail('This sale order is shipped. Cannot Cancel');
                         }
                     }
                 ]
             ])->validate();
         }
-        SaleOrder::revertStock($model,$model->items);
+        SaleOrder::revertStock($model, $model->items);
         $model->invoiced_at = null;
         $model->invoiced_by_id = NULL;
         $model->status = 'Cancelled';
         $model->save();
-        $model->shipment()->update(['status'=>'Cancelled']);
+        $model->shipment()->update(['status' => 'Cancelled']);
         $model->customer->updateBalance();
 
         activity()
@@ -760,12 +758,12 @@ class SaleOrderController extends Controller
             ->performedOn($model)
             ->withProperties($model->getChanges())
             ->log('status_updated');
-            return response()->json(['message' => 'success']);
+        return response()->json(['message' => 'success']);
     }
 
     public function registerPayment(Request $request, $id)
-    {   
-        $model= SaleOrder::find($id);
+    {
+        $model = SaleOrder::find($id);
         $model->registerPayment($request);
         $model->customer->updateBalance();
         return response()->json([
@@ -776,18 +774,18 @@ class SaleOrderController extends Controller
     public function download($id)
     {
         // Fetch all customers from database
-        $data = SaleOrder::with(['items','items.product','created_by','representative','warehouse','pricelist','expiryItems'])->find($id);
+        $data = SaleOrder::with(['items', 'items.product', 'created_by', 'representative', 'warehouse', 'pricelist', 'expiryItems'])->find($id);
         // Send data to the view using loadView function of PDF facade
         $pdf = PDF::loadView('saleorder', [
-            'sale_order'=>$data,
+            'sale_order' => $data,
             'totalQty' => $data->items()->sum('qty'),
             'totalTaxable' => $data->items()->sum('taxable'),
             'totalTax' => $data->items()->sum('tax_amount'),
-            ]);
+        ]);
         // If you want to store the generated pdf to the server then you can use the store function
         //$pdf->save(storage_path().'_filename.pdf');
         // Finally, you can download the file using download function
-        $filename = Str::slug($data->serial_no,'_').'.pdf';
+        $filename = Str::slug($data->serial_no, '_') . '.pdf';
         return $pdf->download($filename);
     }
 
@@ -797,8 +795,8 @@ class SaleOrderController extends Controller
         $data = $request->toArray();
         // Send data to the view using loadView function of PDF facade
         $pdf = PDF::loadView('packaging', [
-            'data'=>$data,
-            ]);
+            'data' => $data,
+        ]);
         $filename = 'box.pdf';
         return $pdf->download($filename);
     }
@@ -806,42 +804,42 @@ class SaleOrderController extends Controller
     public function count()
     {
         $counts = \App\SaleOrder::selectRaw('source,COUNT(id) AS count, status')->where([
-            ['customer_id','<>',0]
-        ])->groupBy('source','status')->get();
+            ['customer_id', '<>', 0]
+        ])->groupBy('source', 'status')->get();
         return $counts;
     }
 
-    public function export(Request $request,$id)
+    public function export(Request $request, $id)
     {
-      // Fetch all customers from database
-        $data = SaleOrder::with(['items','created_by','representative','warehouse','pricelist'])->find($id);
+        // Fetch all customers from database
+        $data = SaleOrder::with(['items', 'created_by', 'representative', 'warehouse', 'pricelist'])->find($id);
         $customer = \App\Customer::find($data->customer_id);
         $billing_address = '';
         $billing_model = $customer->getBillingAddress();
-        if($billing_model) {
-            $billing_address .= $billing_model->line_1.', ';
-            if($billing_model->line_2){
-                $billing_address .= $billing_model->line_2.', ';
+        if ($billing_model) {
+            $billing_address .= $billing_model->line_1 . ', ';
+            if ($billing_model->line_2) {
+                $billing_address .= $billing_model->line_2 . ', ';
             }
-            if($billing_model->district){
-                $billing_address .= $billing_model->district.', ';
+            if ($billing_model->district) {
+                $billing_address .= $billing_model->district . ', ';
             }
-            $billing_address .= $billing_model->state.', ';
-            if($billing_model->pin){
-                $billing_address .= 'PIN: '.$billing_model->pin.', ';
+            $billing_address .= $billing_model->state . ', ';
+            if ($billing_model->pin) {
+                $billing_address .= 'PIN: ' . $billing_model->pin . ', ';
             }
-            $billing_address .= $billing_model->country.', ';
+            $billing_address .= $billing_model->country . ', ';
             $billing_phones = $billing_model->phones()->get();
             $billing_address .= 'Ph: ';
-            foreach($billing_phones as $phone){
-                $billing_address .= '('.$phone->country_code.')'.$phone->content.' ';
+            foreach ($billing_phones as $phone) {
+                $billing_address .= '(' . $phone->country_code . ')' . $phone->content . ' ';
             }
         }
         // Send data to the view using loadView function of PDF facade
-        if($request->mode == 'pdf'){
+        if ($request->mode == 'pdf') {
             $currency = $data->currency == 'INR' ? '' : '$';
             $pdf = PDF::loadView('saleorder_invoice', [
-                'saleorder'=>$data,
+                'saleorder' => $data,
                 'currency' => $currency,
                 'totalQty' => $data->items()->sum('qty'),
                 'totalTaxable' => $data->items()->sum('taxable'),
@@ -854,11 +852,11 @@ class SaleOrderController extends Controller
             // If you want to store the generated pdf to the server then you can use the store function
             //$pdf->save(storage_path().'_filename.pdf');
             // Finally, you can download the file using download function
-            $filename = Str::slug($data->serial_no,'_').'.pdf';
+            $filename = Str::slug($data->serial_no, '_') . '.pdf';
             return $pdf->download($filename);
         }
-        if($request->mode == 'excel'){
-            return (new \App\Exports\SaleExport($data,$billing_address,$request->include_gst_column,$request->use_mask_name, $request->include_hsn_column))->download('file.xlsx');
+        if ($request->mode == 'excel') {
+            return (new \App\Exports\SaleExport($data, $billing_address, $request->include_gst_column, $request->use_mask_name, $request->include_hsn_column))->download('file.xlsx');
         }
     }
 }

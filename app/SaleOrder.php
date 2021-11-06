@@ -232,6 +232,11 @@ class SaleOrder extends Model
         $model->subtotal = $subtotal;
         $model->total = $subtotal - (float)$data['discount'] + (float)$data['freight'] + (float)$data['round'] + (float)$data['cod_charge'];
         $model->save();
+        activity('debug')->withProperties([
+            'items' => $newItems,
+            'subtotal' => $subtotal,
+            'total' => $model->total
+        ])->log('Create Sale Order Processed Input');
         return $model;
     }
 
@@ -328,6 +333,11 @@ class SaleOrder extends Model
         $this->subtotal = $subtotal;
         $this->total = $subtotal - (float)$data['discount'] + (float)$data['freight'] + (float)$data['round'] + (float)$data['cod_charge'];
         $this->save();
+        activity('debug')->withProperties([
+            'items' => $newItems,
+            'subtotal' => $subtotal,
+            'total' => $this->total
+        ])->log('Create Sale Order Processed Input');
         return $this;
     }
 
@@ -377,7 +387,7 @@ class SaleOrder extends Model
             'amount' => $amount,
             'reference_id' => $reference_id,
             'remarks' => $remarks,
-            'created_by_id' => \Auth::user() ? \Auth::user()->id : 1,
+            'created_by_id' => auth()->user() ? auth()->user()->id : 1,
             'parent_id' => $parent_id
         ]);
         $this->transactions()->save($transaction);
@@ -423,7 +433,7 @@ class SaleOrder extends Model
                             'amount' => $request->paid_amount,
                             'reference_id' => $request->reference_id,
                             'remarks' => $request->remarks,
-                            'created_by_id' => \Auth::user()->id,
+                            'created_by_id' => auth()->user()->id,
                             'standalone' => true,
                             'parent_id' => 0
                         ]);
@@ -449,7 +459,7 @@ class SaleOrder extends Model
                     'amount' => $request->paid_amount,
                     'reference_id' => $request->reference_id,
                     'remarks' => $request->remarks,
-                    'created_by_id' => \Auth::user()->id,
+                    'created_by_id' => auth()->user()->id,
                     'standalone' => true,
                     'parent_id' => 0
                 ]);
