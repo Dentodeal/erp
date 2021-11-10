@@ -18,8 +18,8 @@ export default function (/* { ssrContext } */) {
       permissions: [],
       pageTitle: 'ApexionERP',
       toolbarButtons: null,
-      apiURL: process.env.PROD ? 'https://app.apexion.ml/api' : 'http://api.erp.ss/api',
-      baseURL: process.env.PROD ? 'https://app.apexion.ml' : 'http://api.erp.ss'
+      apiURL: process.env.PROD ? 'https://app.apexion.ga/api' : 'http://api.erp.ss/api',
+      baseURL: process.env.PROD ? 'https://app.apexion.ga' : 'http://api.erp.ss'
     },
     getters: {
       isAuthenticated: (state) => {
