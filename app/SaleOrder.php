@@ -553,19 +553,20 @@ class SaleOrder extends Model
             if ($m) {
                 $m->update(['qty' => $m->qty + (int)$item['qty']]);
             } else {
-                $lot_number = DB::table('product_stock')->where([
+                $lotNumberRow = DB::table('product_stock')->where([
                     ['product_id', '=', $item['product_id']],
                     ['reservable_id', '=', $model->id],
                     ['reservable_type', '=', 'App\SaleOrder'],
                     ['expiry_date', '=', $item['expiry_date']],
                     ['warehouse_id', '=', $model->warehouse_id]
-                ])->first()->lot_number;
+                ])->first();
+
                 \App\ProductStock::create([
                     'product_id' => $item['product_id'],
                     'reservable_id' => 0,
                     'expiry_date' => $item['expiry_date'],
                     'warehouse_id' => $model->warehouse_id,
-                    'lot_number' => $lot_number,
+                    'lot_number' => $lotNumberRow ? $lotNumberRow->lot_number : NULL,
                     'qty' => (int)$item['qty']
                 ]);
             }
@@ -579,18 +580,18 @@ class SaleOrder extends Model
             if ($m) {
                 $m->update(['qty' => $m->qty + (int)$item['qty']]);
             } else {
-                $lot_number = DB::table('product_stock')->where([
+                $lotNumberRow = DB::table('product_stock')->where([
                     ['product_id', '=', $item['product_id']],
                     ['reservable_id', '=', $model->id],
                     ['reservable_type', '=', 'App\SaleOrder'],
                     ['expiry_date', '=', NULL],
                     ['warehouse_id', '=', $model->warehouse_id]
-                ])->first()->lot_number;
+                ])->first();
                 \App\ProductStock::create([
                     'product_id' => $item['product_id'],
                     'reservable_id' => 0,
                     'expiry_date' => NULL,
-                    'lot_number' => $lot_number,
+                    'lot_number' => $lotNumberRow ? $lotNumberRow->lot_number : NULL,
                     'warehouse_id' => $model->warehouse_id,
                     'qty' => (int)$item['qty']
                 ]);
