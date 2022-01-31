@@ -79,7 +79,7 @@
               <q-tr :props="props">
                 <q-td class="text-right">{{ props.rowIndex + 1 }}</q-td>
                 <q-td>
-                  {{ props.row.name }}
+                  {{ props.row.product.name }}
                 </q-td>
                 <q-td class="text-right">
                   {{ props.row.qty }}
